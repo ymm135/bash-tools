@@ -28,8 +28,18 @@ fi
 serverTargetPath=$TargetPath/backend
 rm -fr $serverTargetPath/*
 $CP $serverPath/* $serverTargetPath/
-$CP $serverPath/shell/* $serverTargetPath/
-rm -fr $serverTargetPath/shell
+$CP $serverPath/shell/a.sh $serverTargetPath/
+
+dataAudit="/data/audit"
+if [ ! -d "$dataAudit" ]; then
+    mkdir -p dataAudit
+fi
+
+# 存放设备目录
+deviceInfo="device_info.conf"
+if [ ! -f "$dataAudit/deviceInfo" ]; then
+    $CP $serverPath/resource/$deviceInfo $dataAudit
+fi
 
 supervisorctl restart audit-server
 

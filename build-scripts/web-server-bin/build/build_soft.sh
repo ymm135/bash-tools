@@ -26,7 +26,7 @@ downloadAndUpdateAuditCode() {
 
     echo -e "downloadAndUpdateAuditCode \e[93 更新审计项目代码成功 \033[0m"
 
-    outputDir=${JenkinsRootDir}/outputs/audit-$(date '+%Y-%m-%d_%H-%M-%S')
+    outputDir=${JenkinsRootDir}/outputs/audit-$(date '+%Y%m%d_%H%M%S')
     if [ ! -d "$outputDir" ]; then
         mkdir -p $outputDir
     fi
@@ -105,7 +105,7 @@ buildAuditServer() {
 
     go clean
 
-    GOOS=linux GOARCH=amd64 go build -o audit-server -ldflags '-s -w'
+    GOOS=linux GOARCH=amd64 go build -o audit-server
 
     if [ ! -f $SERVER_BIN ]; then
         echo -e "\033[31m error $SERVER_BIN 编译失败! \033[0m"
@@ -121,11 +121,24 @@ buildAuditServer() {
     $CP $dir/shell $serverTartgetDir
 
     # 拷贝配置文件
-    configArray=("config.yaml" "config-test.yaml")
-    for config in ${configArray[@]}; do
+    serverFilesArray=("config.yaml" "config-test.yaml" "audit_public.pem" "truncate.sql")
+    for config in ${serverFilesArray[@]}; do
         echo "拷贝配置文件$config 到 $target_dir $copyConfig"
         $CP $config $serverTartgetDir
     done
+
+    versionFile="$dir/resource/version_info.conf"
+
+    if [ ! -f "$versionFile" ]; then
+        echo "Error $versionFile 版本文件不存在!!"
+        exit
+    fi
+
+    echo -e "\ntimestamp=$(date '+%Y%m%d_%H%M%S')" >>$versionFile
+    echo -e "md5=$(md5sum $SERVER_BIN | cut -d' ' -f1)" >>$versionFile
+
+    #拷贝资源
+    $CP $dir/resource $serverTartgetDir
 
     echo -e "\n buildAuditServer complete! \n"
     cd -
