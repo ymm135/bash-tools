@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source $RootDir/config/config.sh
-
 # 编译审计项目软件
 webAndServerRepoName="audit"
 webAndServerRepoBranch=develop
@@ -26,7 +24,13 @@ downloadAndUpdateAuditCode() {
 
     echo -e "downloadAndUpdateAuditCode \e[93 更新审计项目代码成功 \033[0m"
 
-    outputDir=${JenkinsRootDir}/outputs/audit-$(date '+%Y%m%d_%H%M%S')
+    versionFile="${JenkinsRootDir}/${webAndServerRepoName}/$serverDir/resource/version_info.conf"
+    # 获取第一行内容
+    versionText=$(awk 'NR==1{print}' $versionFile)
+    versionCode=${versionText#*=}
+
+    timeStamp=$(date '+%Y%m%d-%H%M%S')
+    outputDir=${JenkinsRootDir}/$PackagesOutputDir/build/audit_build_v${versionCode}_$timeStamp
     if [ ! -d "$outputDir" ]; then
         mkdir -p $outputDir
     fi
@@ -69,10 +73,15 @@ buildAuditWeb() {
         exit
     fi
 
-    webTargetDir=$tartgetDir/web
+    webTargetDir=$tartgetDir/frontend
     mkdir -p $webTargetDir
 
     $CP $distDir/* $webTargetDir
+
+    if (("$?" != 0)); then
+        echo -e "Error buildAuditWeb 拷贝失败!"
+        exit
+    fi
 
     echo -e "\n buildAuditWeb complete! \n"
     cd -
@@ -112,7 +121,7 @@ buildAuditServer() {
         exit
     fi
 
-    serverTartgetDir=$tartgetDir/server
+    serverTartgetDir=$tartgetDir/backend
     mkdir -p $serverTartgetDir
 
     $CP $SERVER_BIN $serverTartgetDir
@@ -127,14 +136,12 @@ buildAuditServer() {
         $CP $config $serverTartgetDir
     done
 
-    versionFile="$dir/resource/version_info.conf"
-
     if [ ! -f "$versionFile" ]; then
         echo "Error $versionFile 版本文件不存在!!"
         exit
     fi
 
-    echo -e "\ntimestamp=$(date '+%Y%m%d_%H%M%S')" >>$versionFile
+    echo -e "\ntimestamp=$timeStamp" >>$versionFile
     echo -e "md5=$(md5sum $SERVER_BIN | cut -d' ' -f1)" >>$versionFile
 
     #拷贝资源
@@ -167,7 +174,7 @@ buildAuditEngine() {
         exit
     fi
 
-    engineTargetDir=$tartgetDir/engine
+    engineTargetDir=$tartgetDir/ids
     mkdir -p $engineTargetDir/bin
 
     $CP $targetBin $engineTargetDir/bin

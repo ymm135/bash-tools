@@ -8,26 +8,28 @@ TargetOriginPath="/opt/netvine/origin"
 TargetPath="/opt/audit"
 
 # 更新web
-webPath=$currPath/web
+webDirName="frontend"
+webPath=$currPath/$webDirName
 if [ ! -d "$webPath" ]; then
     echo "$webPath 目录不存在!"
 fi
 
-webTargetPath=$TargetPath/frontend
+webTargetPath=$TargetPath/$webDirName
 rm -fr $webTargetPath/*
-$CP $webPath/* $webTargetPath/
+$CP $webPath/* $webTargetPath
 
 supervisorctl restart audit-web
 
 # 更新server
-serverPath=$currPath/server
+serverDirName="backend"
+serverPath=$currPath/$serverDirName
 if [ ! -d "$serverPath" ]; then
     echo "$serverPath 目录不存在!"
 fi
 
-serverTargetPath=$TargetPath/backend
+serverTargetPath=$TargetPath/$serverDirName
 rm -fr $serverTargetPath/*
-$CP $serverPath/* $serverTargetPath/
+$CP $serverPath/* $serverTargetPath
 $CP $serverPath/shell/a.sh $serverTargetPath/
 
 dataAudit="/data/audit"
@@ -44,13 +46,14 @@ fi
 supervisorctl restart audit-server
 
 # 更新engine
-enginePath=$currPath/engine
+engineDirName="ids"
+enginePath=$currPath/$engineDirName
 if [ ! -d "$enginePath" ]; then
     echo "$enginePath 目录不存在!"
 fi
 
-engineTargetPath=$TargetPath/ids
+engineTargetPath=$TargetPath/$engineDirName
 rm -fr $engineTargetPath/*
-$CP $enginePath/* $engineTargetPath/
+$CP $enginePath/* $engineTargetPath
 
 systemctl restart southwest_engine.service
