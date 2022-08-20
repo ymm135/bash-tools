@@ -51,6 +51,14 @@ echo -e "$restoreCmd"
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $restoreCmd
 echo -e "restore done!"
 
+# 修改网卡信息
+echo -e "start modify netcard info..."
+netcardCmd="sudo tar -xvpzf $remoteBackupFile -C / --numeric-owner"
+echo -e "$netcardCmd"
+
+sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $netcardCmd
+echo -e "modify netcard done!"
+
 # 删除备份文件
 echo -e "rm -fr $targetIP >> $targetBackupFileDir"
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $targetBackupFileDir"
