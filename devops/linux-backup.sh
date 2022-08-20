@@ -6,6 +6,13 @@
 # 备份设备
 targetIP=$1
 
+ping -c1 $targetIP
+
+if (($? != 0)); then
+    echo "Ping $targetIP Fail!"
+    exit
+fi
+
 password="Netvine123"
 
 # 存放备份文件的目录
@@ -41,6 +48,6 @@ echo -e "start copy $backupFile to $backupDir ..."
 sshpass -p "$password" scp root@${targetIP}:$backupFilePath $backupDir
 echo -e "copy done"
 
-echo -e "rm -fr $targetIP >> $backupFilePath"
-sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $backupFilePath"
+echo -e "rm -fr $targetIP >> $targetDeviceStoreBackupDir"
+sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $targetDeviceStoreBackupDir"
 echo -e "rm done"
