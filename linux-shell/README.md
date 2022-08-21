@@ -98,7 +98,7 @@ SUBSYSTEM=="net",ACTION=="add",DRIVERS=="?*", DEVPATH=="/devices/pci0000:00/0000
 pcis=$(ls -l /sys/class/net/ | grep -Eo '/devices/pci.+net')
 
 # 遍历结果
-pciArray=(${pcis// / }) 
+pciArray=(${pcis// / })   # 也可以不用
 for pci in ${pciArray[@]}
 do
     echo $pci

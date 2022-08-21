@@ -52,8 +52,24 @@ sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $restoreCm
 echo -e "restore done!"
 
 # 修改网卡信息
+modifyNetCardShellName="modify-netcard.sh"
+modifyNetCardShell=$(dirname "$0")/tools/$modifyNetCardShellName
+targetDeviceShellDir="/tmp"
+
+ls -l $modifyNetCardShell
+
+if (($? != 0)); then
+    echo "$modifyNetCardShell file not exist! Error!"
+    exit
+fi
+
+# 拷贝到本地
+echo -e "start copy $modifyNetCardShell to ${targetIP}:$targetDeviceShellDir ..."
+sshpass -p "$password" scp $modifyNetCardShell root@${targetIP}:$targetDeviceShellDir
+echo -e "copy done"
+
 echo -e "start modify netcard info..."
-netcardCmd="sudo tar -xvpzf $remoteBackupFile -C / --numeric-owner"
+netcardCmd="sh $targetDeviceShellDir/$modifyNetCardShellName"
 echo -e "$netcardCmd"
 
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $netcardCmd
