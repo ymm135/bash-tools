@@ -4,10 +4,9 @@
 # 需要安装 # yum install sshpass # apt install sshpass
 
 # 备份设备
-targetIP=$1
-backupFile=$2
-
-password="Netvine123"
+targetIP=$1   # 目标设备
+backupFile=$2 # 待还原的系统包
+password=$3   # 设备密码
 
 # 备份完存储本机的目录
 backupDir="/data/jenkins-audit/backup"
@@ -26,6 +25,11 @@ backupFilePath=$backupDir/$backupFile
 
 if [ ! -f "$backupFilePath" ]; then
     echo -e "$backupFilePath 不存在!"
+    exit
+fi
+
+if [[ "$password" == "" ]]; then
+    echo "passowrd not set"
     exit
 fi
 

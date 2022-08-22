@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 
-# Linux BackUP
+# Linux Restore
 # 需要安装 # yum install sshpass # apt install sshpass
 
 # 备份设备
-targetIP=$1
+targetIP=$1   # 目标设备
+backupFile=$2 # 待还原的系统包
+password=$3   # 设备密码
+
+# 备份完存储本机的目录
+backupDir="/data/jenkins-audit/backup"
+targetBackupFileDir="/root/restore"
+
+echo -e "targetIP=$targetIP ,backupFile=$backupFile"
 
 ping -c1 $targetIP
 
@@ -13,41 +21,67 @@ if (($? != 0)); then
     exit
 fi
 
-password="Netvine123"
-
-# 存放备份文件的目录
-targetDeviceStoreBackupDir="/root/backup"
-
-# 要备份的目录
-targetDeviceBackupDir="/"
-
-# 备份完存储本机的目录
-backupDir="/data/jenkins-audit/backup"
-
-# 备份文件名
-backupFile="audit_backup_$(date '+%Y%m%d-%H%M%S').tar.gz"
-
-echo -e "targetIP=$targetIP"
-
-if [ ! -d "$backupDir" ]; then
-    mkdir -p $backupDir
+backupFilePath=$backupDir/$backupFile
+if [ ! -f "$backupFilePath" ]; then
+    echo -e "$backupFilePath 不存在!"
+    exit
 fi
 
-# yum install sshpass
+if [[ "$password" == "" ]]; then
+    echo "passowrd not set"
+    exit
+fi
+
 # 远程执行
-echo -e "start tar $backupFile ..."
-backUpCmd="mkdir $targetDeviceStoreBackupDir;cd $targetDeviceStoreBackupDir; sudo tar -cvpzf $backupFile $targetDeviceBackupDir --exclude=$backupFile --exclude=/lost+found --exclude=/proc --exclude=/mnt --exclude=/etc/fstab --exclude=/sys --exclude=/dev --exclude=/boot --exclude=/tmp --exclude=/var/cache/apt/archives --exclude=/run --warning=no-file-changed"
-echo -e "$backUpCmd"
+# 删除以前恢复
+sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $targetBackupFileDir"
 
-sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $backUpCmd
-echo -e "tar done!"
+echo -e "start mkdir $targetBackupFileDir ..."
+mkdirCmd="mkdir $targetBackupFileDir"
+echo -e "$mkdirCmd"
 
-backupFilePath="$targetDeviceStoreBackupDir/$backupFile"
+sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $mkdirCmd
+echo -e "mkdir done!"
+
 # 拷贝到本地
-echo -e "start copy $backupFile to $backupDir ..."
-sshpass -p "$password" scp root@${targetIP}:$backupFilePath $backupDir
+echo -e "start copy $backupFilePath to ${targetIP}:$targetBackupFileDir ..."
+sshpass -p "$password" scp $backupFilePath root@${targetIP}:$targetBackupFileDir
 echo -e "copy done"
 
-echo -e "rm -fr $targetIP >> $targetDeviceStoreBackupDir"
-sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $targetDeviceStoreBackupDir"
+# 远程执行还原
+remoteBackupFile="$targetBackupFileDir/$backupFile"
+echo -e "start restore $backupFile ..."
+restoreCmd="sudo tar -xvpzf $remoteBackupFile -C / --numeric-owner"
+echo -e "$restoreCmd"
+
+sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $restoreCmd
+echo -e "restore done!"
+
+# 修改网卡信息
+modifyNetCardShellName="modify-netcard.sh"
+modifyNetCardShell=$(dirname "$0")/tools/$modifyNetCardShellName
+targetDeviceShellDir="/tmp"
+
+ls -l $modifyNetCardShell
+
+if (($? != 0)); then
+    echo "$modifyNetCardShell file not exist! Error!"
+    exit
+fi
+
+# 拷贝到本地
+echo -e "start copy $modifyNetCardShell to ${targetIP}:$targetDeviceShellDir ..."
+sshpass -p "$password" scp $modifyNetCardShell root@${targetIP}:$targetDeviceShellDir
+echo -e "copy done"
+
+echo -e "start modify netcard info..."
+netcardCmd="sh $targetDeviceShellDir/$modifyNetCardShellName"
+echo -e "$netcardCmd"
+
+sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $netcardCmd
+echo -e "modify netcard done!"
+
+# 删除备份文件
+echo -e "rm -fr $targetIP >> $targetBackupFileDir"
+sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $targetBackupFileDir"
 echo -e "rm done"

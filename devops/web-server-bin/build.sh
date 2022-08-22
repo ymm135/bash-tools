@@ -8,6 +8,10 @@ echo -e "\e[33mAudit Soft Update \033[0m"
 
 GlobalOutputDir=""
 
+webBranch=$1
+engineBranch=$2
+deviceIp=${@:3}
+
 # 下载构建脚本
 buildRepoName="build-scripts"
 buildScriptGitRepo="${GitUrl}:web/${buildRepoName}.git"
@@ -19,7 +23,7 @@ downloadCode $buildScriptGitRepo $JenkinsRootDir $buildCodePath
 
 updateCode $buildCodePath master
 
-downloadAndUpdateAuditCode $JenkinsRootDir
+downloadAndUpdateAuditCode $webBranch $engineBranch
 
 # 拷贝更新脚本并打包
 echo "输出目标路径$GlobalOutputDir"
@@ -47,7 +51,7 @@ fi
 targetDeviceDir="/data/update_packages"
 versionFile="/opt/audit/backend/resource/version_info.conf"
 
-for ip in "$@"; do
+for ip in "$deviceIp"; do
     echo "安装更新到${ip} ..."
     ssh root@${ip} "mkdir $targetDeviceDir"
     scp $outDirParentPath/$tarFileName root@${ip}:$targetDeviceDir
