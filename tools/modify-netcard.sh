@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# 要修改的ip地址
+ip=$1
+
 echo -e "modify netcard name to eth"
 ls -l /etc/sysconfig/network-scripts/ifcfg-eth*
 
@@ -26,3 +29,6 @@ for pci in ${pcis[@]}; do
     echo -e "SUBSYSTEM==\"net\",ACTION==\"add\",DRIVERS==\"?*\", DEVPATH==\"${pci}*\", NAME=\"eth$netcardIndex\"" >>$netRuleFile
     netcardIndex=$((netcardIndex + 1))
 done
+
+# 修改ip地址
+sed -i "s/IPADDR=.*/IPADDR=$ip/g" /etc/sysconfig/network-scripts/ifcfg-eth0

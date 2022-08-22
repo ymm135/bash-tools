@@ -22,7 +22,6 @@ if (($? != 0)); then
 fi
 
 backupFilePath=$backupDir/$backupFile
-
 if [ ! -f "$backupFilePath" ]; then
     echo -e "$backupFilePath 不存在!"
     exit
@@ -34,10 +33,15 @@ if [[ "$password" == "" ]]; then
 fi
 
 # 远程执行
+# 删除以前恢复
+ssh-keygen -R $targetIP
+sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $targetBackupFileDir"
+
 echo -e "start mkdir $targetBackupFileDir ..."
 mkdirCmd="mkdir $targetBackupFileDir"
 echo -e "$mkdirCmd"
 
+ssh-keygen -R $targetIP
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $mkdirCmd
 echo -e "mkdir done!"
 
@@ -52,6 +56,7 @@ echo -e "start restore $backupFile ..."
 restoreCmd="sudo tar -xvpzf $remoteBackupFile -C / --numeric-owner"
 echo -e "$restoreCmd"
 
+ssh-keygen -R $targetIP
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $restoreCmd
 echo -e "restore done!"
 
@@ -69,17 +74,20 @@ fi
 
 # 拷贝到本地
 echo -e "start copy $modifyNetCardShell to ${targetIP}:$targetDeviceShellDir ..."
+ssh-keygen -R $targetIP
 sshpass -p "$password" scp $modifyNetCardShell root@${targetIP}:$targetDeviceShellDir
 echo -e "copy done"
 
 echo -e "start modify netcard info..."
-netcardCmd="sh $targetDeviceShellDir/$modifyNetCardShellName"
+netcardCmd="sh $targetDeviceShellDir/$modifyNetCardShellName $targetIP"
 echo -e "$netcardCmd"
 
+ssh-keygen -R $targetIP
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $netcardCmd
 echo -e "modify netcard done!"
 
 # 删除备份文件
 echo -e "rm -fr $targetIP >> $targetBackupFileDir"
+ssh-keygen -R $targetIP
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $targetBackupFileDir"
 echo -e "rm done"
