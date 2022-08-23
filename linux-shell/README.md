@@ -1,4 +1,12 @@
 - # linux-shell
+
+- [常用指令](#常用指令)
+  - [字符串查找替换](#字符串查找替换)
+  - [字符串截取](#字符串截取)
+  - [文件大小及排序](#文件大小及排序)
+- [示例与实践](#示例与实践)
+  - [修改网卡名称](#修改网卡名称)
+
 ## 常用指令
 ### 字符串查找替换
 原理
@@ -62,16 +70,161 @@ echo ${url%/*}  #结果为 http://c.biancheng.net
 echo ${url%%/*}  #结果为 http:
 ```
 
+### `du`文件大小及排序
 
+Linux du （英文全拼：disk usage）命令用于显示目录或文件的大小。  
+du 会显示指定的目录或文件所占用的磁盘空间。  
+
+常用参数  
+- -h或--human-readable 以K，M，G为单位，提高信息的可读性。  
+- --max-depth=<目录层数> 超过指定层数的目录后，予以忽略。  
+- -s或--summarize 仅显示总计。  
+
+显示总计
+```shell
+du -sh *
+```
+输出结果
+```shell
+0	bin
+160M	boot
+11G	data
+0	dev
+39M	etc
+12K	home
+0	lib
+0	lib64
+328K	log
+16K	lost+found
+4.0K	media
+8.0K	mnt
+2.2G	opt
+```
+
+只显示一级目录
+```shell
+du -h --max-depth=1 *
+```
+输出结果
+```shell
+0	bin
+7.8M	boot/grub2
+6.0K	boot/efi
+5.0K	boot/grub
+13K	boot/lost+found
+160M	boot
+1.1M	data/flowdata
+412K	data/allow-list
+24K	data/configuration
+852K	data/rules
+6.1G	data/log
+728K	data/redis
+28K	data/network_attack
+44K	data/audit
+104M	data/report
+4.0K	data/socket
+60K	data/self-proto
+3.0G	data/coredump
+512M	data/supervisord
+4.0K	data/mysql-outputs
+68M	data/pcap
+409M	data/mysql
+16K	data/engine_conf
+16K	data/lost+found
+11G	data
+```
+
+输出结果并排序
+```shell
+du -h --max-depth=1 /data | sort -nr
+```
+
+输出结果
+```shell
+852K	/data/rules
+728K	/data/redis
+512M	/data/supervisord
+412K	/data/allow-list
+409M	/data/mysql
+104M	/data/report
+68M	/data/pcap
+60K	/data/self-proto
+44K	/data/audit
+28K	/data/network_attack
+24K	/data/configuration
+16K	/data/lost+found
+16K	/data/engine_conf
+11G	/data/
+6.1G	/data/log
+4.0K	/data/socket
+4.0K	/data/mysql-outputs
+3.0G	/data/coredump
+1.1M	/data/flowdata
+```
+
+### [grep](grep.md)  
 > grep 更适合单纯的查找或匹配文本  
 > sed 更适合编辑匹配到的文本  
 > awk 更适合格式化文本，对文本进行较复杂格式处理  
-- ### [grep](grep.md)  
-- ### [sed](sed.md)  
-- ### [awk](awk.md)  
+> 
+### [sed](sed.md)  
 
-### 示例与实践  
-## 修改网卡名称  
+### [awk](awk.md)  
+
+### [find](find.md)
+
+### `crontab`定时任务  
+[crontab在线](https://tool.lu/crontab/)  
+linux内置的cron进程能帮我们实现这些需求，cron搭配shell脚本，非常复杂的指令也没有问题。  
+
+我们经常使用的是crontab命令是cron table的简写，它是cron的配置文件，也可以叫它作业列表，我们可以在以下文件夹内找到相关配置文件。  
+
+- /var/spool/cron/ 目录下存放的是每个用户包括root的crontab任务，每个任务以创建者的名字命名  
+- /etc/crontab 这个文件负责调度各种管理和维护任务。  
+- /etc/cron.d/ 这个目录用来存放任何要执行的crontab文件或脚本。
+- 我们还可以把脚本放在`/etc/cron.hourly`、`/etc/cron.daily`、`/etc/cron.weekly`、`/etc/cron.monthly`目录中，让它每小时/天/星期、月执行一次。  
+
+语法
+```shell
+crontab [-u username]　　　　//省略用户表表示操作当前用户的crontab
+    -e      (编辑工作表)
+    -l      (列出工作表里的命令)
+    -r      (删除工作作)
+``` 
+
+我们用crontab -e进入当前用户的工作表编辑，是常见的vim界面。每行是一条命令。  
+crontab的命令构成为 时间+动作，其时间有`分`、`时`、`日`、`月`、`周`五种，操作符有
+
+- * 取值范围内的所有数字
+- / 每过多少个数字
+- - 从X到Z
+- ，散列数字 
+
+示例
+```shell
+# 每1分钟执行一次myCommand
+* * * * * myCommand
+
+# 每小时的第3和第15分钟执行
+3,15 * * * * myCommand
+
+# 在上午8点到11点的第3和第15分钟执行
+3,15 8-11 * * * myCommand
+
+# 每晚的21:30重启smb
+30 21 * * * /etc/init.d/smb restart
+
+# 每周六、周日的1 : 10重启smb
+10 1 * * 6,0 /etc/init.d/smb restart
+```
+
+```shell
+$ crontab -l
+0 0 * * * /usr/local/audit/delete_log.sh 
+```
+
+## 示例与实践  
+### 修改网卡名称  
 ```shell
 # 查看网卡设备信息
 $ ll /sys/class/net/ | awk '/\/devices\/pci\S+/'
