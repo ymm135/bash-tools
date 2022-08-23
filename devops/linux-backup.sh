@@ -47,18 +47,15 @@ echo -e "start tar $backupFile ..."
 backUpCmd="mkdir $targetDeviceStoreBackupDir;cd $targetDeviceStoreBackupDir; sudo tar -cvpzf $backupFile $targetDeviceBackupDir --exclude=$backupFile --exclude=/lost+found --exclude=/proc --exclude=/mnt --exclude=/etc/fstab --exclude=/sys --exclude=/dev --exclude=/boot --exclude=/tmp --exclude=/var/cache/apt/archives --exclude=/run --warning=no-file-changed"
 echo -e "$backUpCmd"
 
-ssh-keygen -R $targetIP
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP $backUpCmd
 echo -e "tar done!"
 
 backupFilePath="$targetDeviceStoreBackupDir/$backupFile"
 # 拷贝到本地
-ssh-keygen -R $targetIP
 echo -e "start copy $backupFile to $backupDir ..."
 sshpass -p "$password" scp root@${targetIP}:$backupFilePath $backupDir
 echo -e "copy done"
 
-ssh-keygen -R $targetIP
 echo -e "rm -fr $targetIP >> $targetDeviceStoreBackupDir"
 sshpass -p "$password" ssh -o StrictHostKeyChecking=no root@$targetIP "rm -fr $targetDeviceStoreBackupDir"
 echo -e "rm done"

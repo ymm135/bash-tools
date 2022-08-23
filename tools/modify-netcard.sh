@@ -12,6 +12,8 @@ if (($? != 0)); then
     exit
 fi
 
+rm -fr /etc/sysconfig/network-scripts/ifcfg-enp*
+
 pcis=$(ls -l /sys/class/net/ | grep -Eo '/devices/pci.+net')
 
 echo -e "modify netcard pcis=$pcis"
